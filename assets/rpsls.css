@@ -1,0 +1,58 @@
+body {
+  text-align: center;
+  font-family: Merriweather, serif;
+  font-size: 24px;
+}
+
+input {
+  display: block;
+  margin: 50px auto;
+  line-height: 42px;
+  padding-left: 10px;
+  font-size: 24px;
+}
+
+button {
+  background-color: #4CAF50; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-decoration: none;
+  font-size: 24px;
+  display: block;
+  margin: 50px auto;
+  cursor: pointer;
+}
+
+.options {
+  width: 800px;
+  margin: 0 auto 30px auto;
+}
+
+.options img {
+  display: inline-block;
+  width: 20%;
+  margin: 0;
+}
+
+.options img:hover {
+  cursor: pointer;
+  background-color: lightblue;
+}
+
+.choices {
+  width: 320px;
+  margin: 0 auto 30px auto;
+}
+
+.choices img {
+  display: inline-block;
+  width: 50%;
+  margin: 0;
+}
+
+img.animated {
+  display: block;
+  width: 200px;
+  margin: 50px auto;
+}
