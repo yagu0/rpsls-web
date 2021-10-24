@@ -25,11 +25,11 @@ let Seek = {
       Seek.searching = true;
     }
   },
-	view: function(vnode) {
+  view: function(vnode) {
     if (Seek.searching)
       return m("img.animated", {src: "assets/searching.gif"});
-		return m("button", {onclick: Seek.seekGame}, "Play");
-	}
+    return m("button", {onclick: Seek.seekGame}, "Play");
+  }
 };
 
 const Choices =
@@ -144,7 +144,7 @@ socket.on("move", (msg) => {
 });
 
 m.route(document.body, "/seek", {
-	"/seek": Seek,
-	"/play": Play,
+  "/seek": Seek,
+  "/play": Play,
   "/login": Login
 });
