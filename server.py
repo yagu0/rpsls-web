@@ -6,11 +6,12 @@ from datetime import date
 import os
 
 # Create a Socket.IO server (CORS arg required on server, not locally)
-sio = socketio.Server()
-#sio = socketio.Server(cors_allowed_origins='URL or *')
+MODE = os.getenv('RPSLS_MODE')
+allowed_origin = 'https://rpsls.auder.net' if MODE=='production' else '*'
+sio = socketio.Server(cors_allowed_origins=allowed_origin)
 
-RPSLS_PATH = './' #edit if launched from elsewhere
-DB_PATH = RPSLS_PATH + 'db/rpsls.sqlite'
+RPSLS_PATH = os.getcwd()
+DB_PATH = RPSLS_PATH + '/db/rpsls.sqlite'
 
 searching = {} #someone seeks a game? (uid + sid)
 connected = {} #map uid --> sid (seek stage)
@@ -102,10 +103,10 @@ def inc_pts(sid, data):
     con.close()
 
 static_files = {
-    '/': RPSLS_PATH + 'index.html',
-    '/rpsls.js': RPSLS_PATH + 'rpsls.js',
-    '/favicon.ico': RPSLS_PATH + 'favicon.ico',
-    '/assets': RPSLS_PATH + 'assets'
+    '/': RPSLS_PATH + '/index.html',
+    '/rpsls.js': RPSLS_PATH + '/rpsls.js',
+    '/favicon.ico': RPSLS_PATH + '/favicon.ico',
+    '/assets': RPSLS_PATH + '/assets'
 }
 
 PORT = os.getenv('RPSLS_PORT')
