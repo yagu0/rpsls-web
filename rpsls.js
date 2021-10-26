@@ -63,6 +63,7 @@ let Play = {
     Play.oppselect = Play.oppmove; //reveal opponent's move only now
     if (Win[Play.mymove].includes(Play.oppmove)) {
       if (++Play.mypoints == MAX_POINTS) Play.endGame(true);
+      socket.emit("inc_pts", {uid: getV("uid"), gid:Play.gid});
     }
     else if (Win[Play.oppmove].includes(Play.mymove)) {
       if (++Play.oppoints == MAX_POINTS) Play.endGame(false);

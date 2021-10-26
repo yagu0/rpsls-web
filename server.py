@@ -91,6 +91,16 @@ def move(sid, data):
     con.commit()
     con.close()
 
+@sio.event
+def inc_pts(sid, data):
+    """ Add a point to the player (who won last round) """
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    cur.execute("update Players set points=points+1 where uid=? and gid=?",
+                (data["uid"],data["gid"]))
+    con.commit()
+    con.close()
+
 static_files = {
     '/': RPSLS_PATH + 'index.html',
     '/rpsls.js': RPSLS_PATH + 'rpsls.js',
