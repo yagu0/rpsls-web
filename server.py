@@ -17,6 +17,14 @@ DB_PATH = RPSLS_PATH + '/db/rpsls.sqlite'
 searching = {} #someone seeks a game? (uid + sid)
 connected = {} #map uid --> sid (seek stage)
 
+# Avoid repeating DB connect/close code
+def db_operation(func):
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    func(cur)
+    con.commit()
+    con.close()
+
 @sio.event
 def disconnect(sid):
     """ Triggered at page reload or tab close """
@@ -36,22 +44,20 @@ def login(sid, data):
     if not re_match(r"^[a-zA-Z]{3,}$", data):
         sio.emit("login", {"err": "Name: letters only"}, room=sid)
         return
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
-    uid = 0
-    try:
-        # Always try to insert (new) Users row
-        cur.execute("insert into Users (name) values (?)", (data,))
-        uid = cur.lastrowid
-    except sqlite3.IntegrityError as err:
-        # If fails: user already exists, find its ID
-        if str(err) == "UNIQUE constraint failed: Users.name":
-            cur.execute("select id from Users where name = ?", (data,))
-            uid = cur.fetchone()[0]
-        else:
-            raise
-    con.commit()
-    con.close()
+    def upsert(cur):
+        uid = 0
+        try:
+            # Always try to insert (new) Users row
+            cur.execute("insert into Users (name) values (?)", (data,))
+            uid = cur.lastrowid
+        except sqlite3.IntegrityError as err:
+            # If fails: user already exists, find its ID
+            if str(err) == "UNIQUE constraint failed: Users.name":
+                cur.execute("select id from Users where name = ?", (data,))
+                uid = cur.fetchone()[0]
+            else:
+                raise
+    db_operation(upsert)
     sio.emit("login", {"name": data, "uid": uid}, room=sid)
 
 @sio.event
@@ -65,43 +71,37 @@ def seek(sid, data):
         # Active seek pending: create game
         opponent = searching
         searching = {}
-        con = sqlite3.connect(DB_PATH)
-        cur = con.cursor()
-        today = (date.today(),)
-        cur.execute("insert into Games (created) values (?)", today)
-        gid = cur.lastrowid
-        # To room == sid, opponent is me. To my room, it's him/her
-        sio.emit("play",
-            {"gid":gid, "oppid":opponent["uid"], "oppname":opponent["name"]},
-            room=sid)
-        sio.emit("play",
-            {"gid":gid, "oppid":data["uid"], "oppname":data["name"]},
-            room=opponent["sid"])
-        id_list = [(data["uid"],gid), (opponent["uid"],gid)]
-        cur.executemany("insert into Players (uid,gid) values (?,?)", id_list)
-        con.commit()
-        con.close()
+        def create_game(cur):
+            today = (date.today(),)
+            cur.execute("insert into Games (created) values (?)", today)
+            gid = cur.lastrowid
+            # To room == sid, opponent is me. To my room, it's him/her
+            sio.emit("play",
+                {"gid":gid, "oppid":opponent["uid"], "oppname":opponent["name"]},
+                room=sid)
+            sio.emit("play",
+                {"gid":gid, "oppid":data["uid"], "oppname":data["name"]},
+                room=opponent["sid"])
+            id_list = [(data["uid"],gid), (opponent["uid"],gid)]
+            cur.executemany("insert into Players (uid,gid) values (?,?)", id_list)
+        db_operation(create_game)
 
 @sio.event
 def move(sid, data):
     """ New move to DB + transmit to opponent """
     sio.emit("move", data, room=connected[data["oppid"]])
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
-    cur.execute("insert into Moves (uid,gid,choice,mnum) values (?,?,?,?)",
-                (data["uid"],data["gid"],data["choice"],data["mnum"]))
-    con.commit()
-    con.close()
+    db_operation(lambda cur:
+        cur.execute("insert into Moves (uid,gid,choice,mnum) values (?,?,?,?)",
+                    (data["uid"],data["gid"],data["choice"],data["mnum"]))
+    )
 
 @sio.event
 def inc_pts(sid, data):
     """ Add a point to the player (who won last round) """
-    con = sqlite3.connect(DB_PATH)
-    cur = con.cursor()
-    cur.execute("update Players set points=points+1 where uid=? and gid=?",
-                (data["uid"],data["gid"]))
-    con.commit()
-    con.close()
+    db_operation(lambda cur:
+        cur.execute("update Players set points=points+1 where uid=? and gid=?",
+                    (data["uid"],data["gid"]))
+    )
 
 static_files = {
     '/': RPSLS_PATH + '/index.html',
