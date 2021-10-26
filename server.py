@@ -1,16 +1,17 @@
 import socketio
 import eventlet
 import sqlite3
-import re
+from re import match as re_match
 from datetime import date
-import os
+from os import getenv
+from sys import path as sys_path
 
 # Create a Socket.IO server (CORS arg required on server, not locally)
-MODE = os.getenv('RPSLS_MODE')
+MODE = getenv('RPSLS_MODE')
 allowed_origin = 'https://rpsls.auder.net' if MODE=='production' else '*'
 sio = socketio.Server(cors_allowed_origins=allowed_origin)
 
-RPSLS_PATH = os.getcwd()
+RPSLS_PATH = sys_path[0]
 DB_PATH = RPSLS_PATH + '/db/rpsls.sqlite'
 
 searching = {} #someone seeks a game? (uid + sid)
@@ -32,7 +33,7 @@ def disconnect(sid):
 @sio.event
 def login(sid, data):
     """ When user sends name from /login page """
-    if not re.match(r"^[a-zA-Z]{3,}$", data):
+    if not re_match(r"^[a-zA-Z]{3,}$", data):
         sio.emit("login", {"err": "Name: letters only"}, room=sid)
         return
     con = sqlite3.connect(DB_PATH)
@@ -109,7 +110,7 @@ static_files = {
     '/assets': RPSLS_PATH + '/assets'
 }
 
-PORT = os.getenv('RPSLS_PORT')
+PORT = getenv('RPSLS_PORT')
 if PORT is None:
     PORT = "8000"
 PORT = int(PORT)
