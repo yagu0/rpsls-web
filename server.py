@@ -57,8 +57,8 @@ def login(sid, data):
                 uid = cur.fetchone()[0]
             else:
                 raise
+        sio.emit("login", {"name": data, "uid": uid}, room=sid)
     db_operation(upsert)
-    sio.emit("login", {"name": data, "uid": uid}, room=sid)
 
 @sio.event
 def seek(sid, data):
@@ -112,7 +112,7 @@ static_files = {
 
 PORT = getenv('RPSLS_PORT')
 if PORT is None:
-    PORT = "8000"
+    PORT = "8000" #8001
 PORT = int(PORT)
 
 # Wrap with a WSGI application
