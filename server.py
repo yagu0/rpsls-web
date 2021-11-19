@@ -112,7 +112,7 @@ static_files = {
 
 PORT = getenv('RPSLS_PORT')
 if PORT is None:
-    PORT = "8000" #8001
+    PORT = "8000"
 PORT = int(PORT)
 
 # Wrap with a WSGI application
